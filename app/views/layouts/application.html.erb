@@ -13,7 +13,9 @@
         <h2>Welcome to Tic Tac Toe Game</h2>
       </div>
       <div class="nav">
-        <%= link_to "Login", "#" %>
+        <% unless current_user.nil? %>
+          Welcome <%= current_user.email %> | <%= link_to "Logout", destroy_user_session_path, :method => :delete %>
+        <% end  %>
       </div>
     </div>
 

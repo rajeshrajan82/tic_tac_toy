@@ -61,5 +61,14 @@ body {
   border-top: 1px solid #e5e5e5;
 }
 
+.login {
+    padding: 20px 0;
+    width: 400px;
+    margin: 0 auto;
+}
+
+#error_explanation h2{
+    font-size: 16px;
+}
 
  
