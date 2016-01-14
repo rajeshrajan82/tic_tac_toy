@@ -1,14 +1,31 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>TicTacToe</title>
-  <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
-  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
-  <%= csrf_meta_tags %>
-</head>
-<body>
+  <head>
+    <title>TicTacToe</title>
+    <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
+    <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
+    <%= csrf_meta_tags %>
+  </head>
+  <body>
 
-<%= yield %>
+    <div class="titactoe-header">
+      <div class="container">
+        <h2>Welcome to Tic Tac Toe Game</h2>
+      </div>
+      <div class="nav">
+        <%= link_to "Login", "#" %>
+      </div>
+    </div>
 
-</body>
+    <div class="container">
+      <div class="row bdy">
+        <%= yield %>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>&copy; @ Rajesh Rajan</p>
+    </footer>
+
+  </body>
 </html>
