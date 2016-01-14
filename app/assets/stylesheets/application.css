@@ -14,10 +14,6 @@
  *= require_self
  */
 
- /*
- * Globals
- */
-
 body {
   font-family: Georgia, "Times New Roman", Times, serif;
   color: #555;
@@ -71,4 +67,35 @@ body {
     font-size: 16px;
 }
 
- 
+.clear {
+    clear: both;
+}
+
+.game {
+    width: 300px;
+    margin: 20px auto;
+}
+
+.cell div {
+    float:left;
+    width:80px;
+    height:80px;
+    border: 1px solid #000;
+    cursor: pointer;
+}
+
+.cell div:nth-child(3n+1) {
+    clear:left;
+}
+
+.cross {
+    background: url('cross.png');
+    background-size: 80px 75px;
+    background-repeat: no-repeat;    
+}
+
+.round {
+    background: url('round.png');
+    background-size: 80px 75px;
+    background-repeat: no-repeat;    
+}
