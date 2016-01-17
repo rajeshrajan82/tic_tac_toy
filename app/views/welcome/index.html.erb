@@ -1,8 +1,12 @@
 <div class="game">
+  <h5>Total Played: <%= current_user.tictactoe.total %>, Won: <%= current_user.tictactoe.pass %>, Lost: <%= current_user.tictactoe.fail %></h5>
   <div class="cell">
   <% (1..9).each do |i| %>
     <div id="cell_number_<%= i %>" val="<%= i %>"></div>
   <% end %>
   </div>
   <div class="clear"></div>
+  <div class="button-link">
+    <%= link_to "Reset", root_path, :class => 'btn btn-primary', :id => "reset" %>
+  </div>
 </div>  

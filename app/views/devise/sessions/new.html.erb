@@ -1,0 +1,28 @@
+<%= form_for(resource, :as => resource_name, :url => session_path(resource_name)) do |f| %>
+  <div class="container">
+    <div class="login">
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <h3>Login</h3>
+          <%= content_tag(:div, flash[:error], :id => "flash_error") if flash[:error] %>
+          <%= content_tag(:div, flash[:notice], :id => "flash_notice") if flash[:notice] %>
+          <%= content_tag(:div, :id => "flash_alert", :class=>"alert alert-danger") do %>
+            <%= content_tag(:span, "", :class=>"glyphicon glyphicon-exclamation-sign") %>
+            <%= content_tag(:span, "Error:", :class=>"sr-only") %>
+            <%= flash[:alert] %>
+          <%end if flash[:alert] %>
+          <div class="form-group">`
+            <%= f.email_field :email, :placeholder=>"Email", autofocus: true, class: 'form-control' %>
+          </div>
+          <div class="form-group">
+            <%= f.password_field :password, :placeholder=>"Password", class: 'form-control' %>
+          </div>  
+          <div class="form-group">  
+            <%= f.submit "Sign in", class: 'btn btn-primary' %>
+          </div>  
+            <%= link_to "New User?", new_user_registration_path %><br />
+        </div>
+      </div>
+    </div>  
+  </div>
+<% end %>

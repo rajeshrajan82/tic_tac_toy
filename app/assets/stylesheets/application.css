@@ -76,6 +76,10 @@ body {
     margin: 20px auto;
 }
 
+.game h5 {
+    font-weight: bold;
+}
+
 .cell div {
     float:left;
     width:80px;
@@ -98,4 +102,14 @@ body {
     background: url('round.png');
     background-size: 80px 75px;
     background-repeat: no-repeat;    
+}
+
+.button-link {
+    margin-top: 10px;
+    padding: 0 10px
+}
+
+.button-link a {
+    text-decoration: none;
+    color: #fff;
 }
