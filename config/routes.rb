@@ -8,6 +8,7 @@ Rails.application.routes.draw do
    root 'welcome#index'
    
   post "welcome/create" => "welcome#create"
+  get "game_change/:id" => "welcome#game_change", :as => :game_change
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'
 
