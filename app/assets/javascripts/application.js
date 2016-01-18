@@ -33,12 +33,16 @@ $(function(){
         data: { 'id' : id },
         dataType: 'json',
         success: function(jsonData) {
+            if (jsonData.host_choose_numbser == "0") {
+                alert("Sorry!!! Please try again");
+                return false;
+            }
           $("#cell_number_"+jsonData.host_choose_numbser).addClass("round");
           console.log(jsonData)
           
           if(jsonData.host_won) {
               GAME_OVER = true;
-              alert("Sorry!!! You have lost the game");
+              alert("Oops!!! Better luck next time.");
               return false;
           }
           if(jsonData.user_won) {
