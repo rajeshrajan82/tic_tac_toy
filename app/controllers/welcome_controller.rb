@@ -1,4 +1,6 @@
 class WelcomeController < ApplicationController
+  before_filter :initialize_value, :only => [:create]
+  
   def index
     Tictactoe.new(:total => 0, :pass => 0, :fail => 0, :user => current_user).save if current_user.tictactoe.nil?
     
@@ -8,32 +10,16 @@ class WelcomeController < ApplicationController
   end
   
   def create
-    @user_picked_values = get_picked_values("user_picked_values")
-    @host_picked_values = get_picked_values("host_picked_values")
-    @valid_numbers = get_valid_numbers("valid_numbers")
-    
-    @user_picked_values ||= []
-    @host_picked_values ||= []
-    choose_number = nil
-    
     add_picked_value(params[:id])
     user_won = current_user.is_won?(@user_picked_values)
-    
     unless user_won
-      choose_number = possible_number_to_win
-      unless choose_number.nil?
-        @valid_numbers.delete(choose_number)
-        set_valid_numbers("valid_numbers", @valid_numbers)
-
-        @host_picked_values << choose_number.to_i
-        set_picked_values("host_picked_values", @host_picked_values)
-      end
-      system_won = find_possiblity?(@host_picked_values, choose_number)
+      system_pick_value
+      system_won = TicTacToeRule.find_possiblity?(@host_picked_values, @choose_number)
     end
-    
     game_over(user_won, system_won) if user_won || system_won
+    
     respond_to do | format|
-      msg = { :status => "ok", :message => "Success!", :host_choose_numbser => choose_number, :user_won => user_won, :host_won => system_won || false }
+      msg = { :status => "ok", :message => "Success!", :host_choose_numbser => @choose_number, :user_won => user_won, :host_won => system_won || false }
       format.json {render :json => msg}
     end
   end
@@ -41,33 +27,32 @@ class WelcomeController < ApplicationController
   def add_picked_value(id)
     @user_picked_values << id.to_i
     set_picked_values("user_picked_values", @user_picked_values)
-    
     @valid_numbers = TicTacToeRule::PICK_NUMBERS.clone if @valid_numbers.nil?
     @valid_numbers.to_a.delete(id.to_i)
     set_valid_numbers("valid_numbers", @valid_numbers)
   end
 
-  def find_possiblity?(picked_values, choose_number)
-    TicTacToeRule::POSSIBLE_WAY_SET.each do |possible_set|
-      next if !possible_set.include?(choose_number)
-      possible_values = possible_set.select {|number| number == choose_number || picked_values.include?(number)}
-      return true if possible_values.size == possible_set.size
+  def system_pick_value
+    @choose_number = possible_number_to_win
+    unless @choose_number.nil?
+      @valid_numbers.delete(@choose_number)
+      set_valid_numbers("valid_numbers", @valid_numbers)
+      @host_picked_values << @choose_number.to_i
+      set_picked_values("host_picked_values", @host_picked_values)
     end
-    false
   end
-
+  
   def possible_number_to_win
     @valid_numbers.each do |number|
-      return number if find_possiblity?(@host_picked_values, number)
+      return number if TicTacToeRule.find_possiblity?(@host_picked_values, number)
     end
     possible_number_to_lose
   end
 
   def possible_number_to_lose
     @valid_numbers.each do |number|
-      return number if find_possiblity?(@user_picked_values, number)
+      return number if TicTacToeRule.find_possiblity?(@user_picked_values, number)
     end
-    
     get_a_number_to_block
   end
 
@@ -84,18 +69,6 @@ class WelcomeController < ApplicationController
     end
     get_possible_way_to_win
   end
-  
-  def get_win_number(possible_list)
-    last_result = 0
-    choose_number = 0
-    possible_list.each do |key, value|
-      if value > last_result
-        last_result = value
-        choose_number = key
-      end
-    end
-    choose_number
-  end  
 
   def get_possible_way_to_win
     possible_list = {}
@@ -111,7 +84,7 @@ class WelcomeController < ApplicationController
       end
       possible_list[number] = result
     end 
-    get_win_number(possible_list)
+    TicTacToeRule.get_win_number(possible_list)
   end
   
   def game_over(user_won, system_won)
@@ -138,5 +111,13 @@ class WelcomeController < ApplicationController
     Rails.cache.write(key, valid_numbers)
   end
   
-  
+  def initialize_value
+    @user_picked_values = get_picked_values("user_picked_values")
+    @host_picked_values = get_picked_values("host_picked_values")
+    @valid_numbers = get_valid_numbers("valid_numbers")
+    
+    @user_picked_values ||= []
+    @host_picked_values ||= []
+    @choose_number = nil
+  end
 end
