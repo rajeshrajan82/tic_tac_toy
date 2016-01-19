@@ -1,8 +1,8 @@
 <div class="game">
   <div class="game-size">Pick Game Plan: <%= link_to "3X3", game_change_path(:id => 9) %> | <%= link_to "4X4", game_change_path(:id => 16) %> | <%= link_to "5X5", game_change_path(:id => 25) %></div>
   <h5>Total Played: <%= current_user.tictactoe.total %>, Won: <%= current_user.tictactoe.pass %>, Lost: <%= current_user.tictactoe.fail %></h5>
-  <div class="cell cell<%=@gameId%>">
-  <% (1..@gameId.to_i).each do |i| %>
+  <div class="cell cell<%=@game_id%>">
+  <% (1..@game_id.to_i).each do |i| %>
     <div id="cell_number_<%= i %>" val="<%= i %>"></div>
   <% end %>
   </div>

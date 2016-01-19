@@ -1,6 +1,7 @@
 class WelcomeController < ApplicationController
+  before_filter :set_default_values, :only => [:index]
   before_filter :initialize_value, :only => [:create]
-  before_filter :set_cache_values, :only => [:index]
+
   GAME_SET = [9, 16, 25]
   
   def index
@@ -9,50 +10,40 @@ class WelcomeController < ApplicationController
   
   def game_change
     if GAME_SET.include? (params[:id].to_i)
-      Rails.cache.write("game", params[:id])
+      session[:game_id] = params[:id].to_i
     end
     redirect_to root_path
   end
   
   def create
-    add_picked_value(params[:id])
-    user_won = is_user_won?
-    unless user_won
-      system_pick_value
-      system_won = TicTacToeRule.find_possiblity?(@host_picked_values, @choose_number, @possible_way_set)
-    end
-    game_over(user_won, system_won) if user_won || system_won
+    add_user_picked_value(params[:id])
+    @user_won = TicTacToeRule.is_user_won?(@user_picked_values, @possible_way_set)
+    get_host_choose_number unless @user_won
+    game_over if @user_won || @host_won
     
     respond_to do | format|
-      msg = { :status => "ok", :message => "Success!", :host_choose_numbser => @choose_number, :user_won => user_won, :host_won => system_won || false }
+      msg = { :status => "ok", :message => "Success!", :host_choose_numbser => @choose_number, :user_won => @user_won, :host_won => @host_won || false }
       format.json {render :json => msg}
     end
   end
   
-  def is_user_won?
-    @possible_way_set.each do |possible_set|
-      possible_values = possible_set.select{|number| @user_picked_values.include?(number)}
-      return true if possible_values.size == possible_set.size
-    end
-    false
-  end
-  
-  def add_picked_value(id)
+  def add_user_picked_value(id)
     @user_picked_values << id.to_i
-    set_picked_values("user_picked_values", @user_picked_values)
-    @valid_numbers = (1..@gameId.to_i).to_a if @valid_numbers.nil?
+    update_user_values
+    @valid_numbers = (1..@game_id.to_i).to_a if @valid_numbers.nil?
     @valid_numbers.to_a.delete(id.to_i)
-    set_valid_numbers("valid_numbers", @valid_numbers)
+    update_valid_numbers
   end
 
-  def system_pick_value
+  def get_host_choose_number
     @choose_number = possible_number_to_win
     unless @choose_number.nil?
-      @valid_numbers.delete(@choose_number)
-      set_valid_numbers("valid_numbers", @valid_numbers)
-      @host_picked_values << @choose_number.to_i
-      set_picked_values("host_picked_values", @host_picked_values)
+      @valid_numbers.delete(@choose_number.to_i)
+      update_valid_numbers
+      @host_picked_values << @choose_number
+      update_host_values
     end
+    @host_won = TicTacToeRule.find_possiblity?(@host_picked_values, @choose_number, @possible_way_set)
   end
   
   def possible_number_to_win
@@ -71,12 +62,7 @@ class WelcomeController < ApplicationController
 
   def get_a_number_to_block
     @valid_numbers.each do |number|  
-      record = 0
-      @possible_way_set.each do |possible_set|          
-        next if !possible_set.include?(number)
-        record += 1 if !possible_set.select {|element| @user_picked_values.include?(element)}.empty? &&
-          possible_set.select {|element| @host_picked_values.include?(element)}.empty?
-      end 
+      record = TicTacToeRule.get_block_number(@user_picked_values, @host_picked_values, @possible_way_set, number) 
       return number if record >= (@game_value.to_i - 1)
     end
     get_possible_way_to_win
@@ -85,65 +71,58 @@ class WelcomeController < ApplicationController
   def get_possible_way_to_win
     possible_list = {}
     @valid_numbers.each do |number|
-      result = 0   
-      
-      @possible_way_set.each do |possible_set|      
-        next unless possible_set.include?(number)        
-        possible_set.each do |element|
-          next_val = (!@valid_numbers.include?(element) && !@host_picked_values.include?(element)) ? -1 : 1
-          result = result + next_val
-        end
-      end
+      result = TicTacToeRule.get_win_possiblity_number(@valid_numbers, @host_picked_values, @possible_way_set, number)
       possible_list[number] = result
     end 
     TicTacToeRule.get_win_number(possible_list)
   end
   
-  def game_over(user_won, system_won)
+  def game_over
     tictactoe = current_user.tictactoe
-    tictactoe.pass = tictactoe.pass.to_i + 1 if user_won
-    tictactoe.fail = tictactoe.fail.to_i + 1 if system_won
+    tictactoe.pass = tictactoe.pass.to_i + 1 if @user_won
+    tictactoe.fail = tictactoe.fail.to_i + 1 if @host_won
     tictactoe.total = tictactoe.total.to_i + 1
     tictactoe.save
   end
-  
+#  
   def get_values(key)
     Rails.cache.read(key)
   end
-  
-  def set_picked_values(key, picked)
-    Rails.cache.write(key, picked)
+
+  def update_user_values
+    session[:user_values] = @user_picked_values
   end
   
-  def set_valid_numbers(key, valid_numbers)
-    Rails.cache.write(key, valid_numbers)
+  def update_host_values
+    session[:host_values] = @host_picked_values
+  end
+  
+  def update_valid_numbers
+    session[:valid_numbers] = @valid_numbers
   end
   
   def initialize_value
-    @user_picked_values = get_values("user_picked_values")
-    @host_picked_values = get_values("host_picked_values")
-    @valid_numbers = get_values("valid_numbers")
-    @gameId = get_values("game")
-    
-    @possible_way_set = get_values("#{@gameId}X")
-    @game_value = get_game_value(@gameId)
-    
-    @user_picked_values ||= []
-    @host_picked_values ||= []
     @choose_number = nil
+    @host_won = false
+    
+    @game_id = session[:game_id] ||= 9
+    @valid_numbers = session[:valid_numbers] ||= nil
+    @user_picked_values = session[:user_values] ||= []
+    @host_picked_values = session[:host_values] ||= []
+    @possible_way_set ||= get_values("#{@game_id}X")
+    @game_value ||= get_game_value(@game_id)
   end
   
   
-  def set_cache_values
-    @gameId = get_values("game")
-    Rails.cache.write("game", @gameId ||= 9)
+  def set_default_values
     Rails.cache.write("9X", TicTacToeRule::POSSIBLE_3X3_SET)
     Rails.cache.write("16X", TicTacToeRule::POSSIBLE_4X4_SET)
     Rails.cache.write("25X", TicTacToeRule::POSSIBLE_5X5_SET)
     
-    Rails.cache.write("user_picked_values", nil)
-    Rails.cache.write("host_picked_values", nil)
-    Rails.cache.write("valid_numbers", nil)
+    session[:valid_numbers] = session[:user_values] = session[:host_values] = nil
+    @game_id = session[:game_id] ||= 9
+    @possible_way_set = get_values("#{@game_id}X")
+    @game_value = get_game_value(@game_id)
   end
   
   def get_game_value(id)
